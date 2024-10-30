@@ -1,0 +1,8 @@
+airtable:
+  api_key: 'your_api_key'
+  backup_directory: 'your_backup_folder'  # Define your backup folder name here
+  bases:
+    - 'appMcxefsViu55eF5'
+    - 'appi1K0YweJOS255s'
+    - 'appUCFNiJjXgD1hXb'
+    # Add other base IDs as needed
