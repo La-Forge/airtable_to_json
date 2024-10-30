@@ -13,11 +13,12 @@ This Python script exports data from all tables in one or more Airtable bases. I
 
 The script requires a config.yaml file for configuration. This file should contain your Airtable API key, the backup directory, and an optional list of base IDs to export.
 
-•	api_key: Your Airtable API key. You can obtain this from your Airtable account settings.
-•	backup_directory: The directory where the exported data will be saved.
-•	bases: A list of base IDs to export. If this list is empty, the script will export data from all bases accessible with the provided API key.
+- api_key: Your Airtable API key. You can obtain this from your Airtable account settings.
+- backup_directory: The directory where the exported data will be saved.
+- bases: A list of base IDs to export. If this list is empty, the script will export data from all bases accessible with the provided API key.
 
 ### Sample config.yaml
+```plaintext
 airtable:
   api_key: 'your_api_key'
   backup_directory: 'your_backup_folder'  # Path to the folder where backups will be saved
@@ -25,6 +26,7 @@ airtable:
     - 'appMcxefsViu55eF5'
     - 'appi1K0YweJOS255s'
     - 'appUCFNiJjXgD1hXb'
+'''
 
 ## Prerequisites
 
