@@ -26,7 +26,7 @@ airtable:
     - 'appMcxefsViu55eF5'
     - 'appi1K0YweJOS255s'
     - 'appUCFNiJjXgD1hXb'
-'''
+```
 
 ## Prerequisites
 
@@ -36,8 +36,3 @@ airtable:
     ```bash
     pip install -r requirements.txt
     ```
-
-### `requirements.txt`
-
-```plaintext
-requests
