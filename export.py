@@ -68,7 +68,7 @@ def export_base_tables(base_dict, base_id):
     print(f"Exporting base {base_name}...")
     
     # Create a directory for the base
-    base_dir = os.path.join(BACKUP_DIR, base_name.replace(" ", "_"))  # Replace spaces with underscores for folder names
+    base_dir = os.path.join(BACKUP_DIR, base_name.replace(" ", "_").replace(":", ""))  # Replace spaces with underscores for folder names
 
     if not os.path.exists(base_dir):
         os.makedirs(base_dir)
