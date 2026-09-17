@@ -5,13 +5,30 @@ import os
 from urllib.parse import quote  # Import quote for URL encoding
 import re
 
-# Load API_KEY, backup_directory, and list of bases from the YAML configuration file
-with open('config.yaml', 'r') as file:
-    config = yaml.safe_load(file)
+# Configuration is read from the environment first, so a container carries no
+# secret on disk; config.yaml remains the local-development path and is
+# optional when the environment supplies everything.
+CONFIG_PATH = os.environ.get('AIRTABLE_CONFIG', 'config.yaml')
 
-API_KEY = config['airtable']['api_key']
-BASE_IDS = config['airtable'].get('bases', [])  # Retrieve bases list or an empty list if not provided
-BACKUP_DIR = config['airtable']['backup_directory']
+airtable_config = {}
+if os.path.exists(CONFIG_PATH):
+    with open(CONFIG_PATH, 'r') as file:
+        airtable_config = (yaml.safe_load(file) or {}).get('airtable', {})
+
+API_KEY = os.environ.get('AIRTABLE_API_KEY') or airtable_config.get('api_key')
+BACKUP_DIR = os.environ.get('AIRTABLE_BACKUP_DIR') or airtable_config.get('backup_directory')
+
+# An empty list means "every base the key can see", so distinguish unset from empty.
+bases_env = os.environ.get('AIRTABLE_BASES')
+if bases_env is not None:
+    BASE_IDS = [b.strip() for b in bases_env.replace('\n', ',').split(',') if b.strip()]
+else:
+    BASE_IDS = airtable_config.get('bases', [])
+
+if not API_KEY:
+    raise SystemExit('No API key: set AIRTABLE_API_KEY, or airtable.api_key in config.yaml')
+if not BACKUP_DIR:
+    raise SystemExit('No backup directory: set AIRTABLE_BACKUP_DIR, or airtable.backup_directory in config.yaml')
 
 HEADERS = {'Authorization': f'Bearer {API_KEY}'}
 
