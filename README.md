@@ -1,12 +1,12 @@
 # Airtable Base Exporter
 
-This Python script exports data from all tables in one or more Airtable bases. It retrieves data using the Airtable API and saves each table's data as a JSON file. This tool is useful for backing up Airtable data or migrating it to another system.
+This Python script exports data from all tables in every Airtable base that the API key can see. It retrieves data using the Airtable API and saves each table's data as a JSON file. This tool is useful for backing up Airtable data or migrating it to another system.
 
 ## Features
 
-- Exports all tables from one or more specified Airtable bases.
-- Saves each table's data in JSON format, organized by base name.
-- Configurable to export all accessible bases or only selected bases.
+- Retrieves the list of bases from the Airtable API, so no base ID is hardcoded.
+- Exports all tables from each base.
+- Saves each table's data in JSON format, in one folder for each base, named `<base name>_<base ID>`.
 - Stores exported data in a configurable directory.
 
 ## Configuration
@@ -20,12 +20,10 @@ is optional when the environment supplies everything.
 | --- | --- |
 | `AIRTABLE_API_KEY` | `airtable.api_key` |
 | `AIRTABLE_BACKUP_DIR` | `airtable.backup_directory` |
-| `AIRTABLE_BASES` | `airtable.bases` — comma- or newline-separated |
 | `AIRTABLE_CONFIG` | path to the config file itself (default `config.yaml`) |
 
-Setting `AIRTABLE_BASES` to an empty string means *every base the key can see*,
-which is the same meaning an empty `bases:` list has. Leaving it unset falls
-back to the file.
+The script exports every base that the API key can see. To limit the scope of
+the backup, limit the scope of the token in Airtable.
 
 ### Running as a container
 
@@ -34,7 +32,6 @@ docker build -t airtable-to-json .
 docker run --rm \
   -e AIRTABLE_API_KEY=... \
   -e AIRTABLE_BACKUP_DIR=/app/backup \
-  -e AIRTABLE_BASES=appXXXX,appYYYY \
   -v /path/on/host:/app/backup \
   airtable-to-json python3 /app/export.py
 ```
@@ -48,21 +45,16 @@ like a run that has not started yet.
 
 ### Using a config file instead
 
-This file should contain your Airtable API key, the backup directory, and an optional list of base IDs to export.
+This file should contain your Airtable API key and the backup directory.
 
 - api_key: Your Airtable API key. You can obtain this from your Airtable account settings.
 - backup_directory: The directory where the exported data will be saved.
-- bases: A list of base IDs to export. If this list is empty, the script will export data from all bases accessible with the provided API key.
 
 ### Sample config.yaml
 ```plaintext
 airtable:
   api_key: 'your_api_key'
   backup_directory: 'your_backup_folder'  # Path to the folder where backups will be saved
-  bases:  # Optional: specify base IDs to export; leave empty to export all accessible bases
-    - 'appMcxefsViu55eF5'
-    - 'appi1K0YweJOS255s'
-    - 'appUCFNiJjXgD1hXb'
 ```
 
 ## Prerequisites

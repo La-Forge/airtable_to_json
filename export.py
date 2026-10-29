@@ -18,13 +18,6 @@ if os.path.exists(CONFIG_PATH):
 API_KEY = os.environ.get('AIRTABLE_API_KEY') or airtable_config.get('api_key')
 BACKUP_DIR = os.environ.get('AIRTABLE_BACKUP_DIR') or airtable_config.get('backup_directory')
 
-# An empty list means "every base the key can see", so distinguish unset from empty.
-bases_env = os.environ.get('AIRTABLE_BASES')
-if bases_env is not None:
-    BASE_IDS = [b.strip() for b in bases_env.replace('\n', ',').split(',') if b.strip()]
-else:
-    BASE_IDS = airtable_config.get('bases', [])
-
 if not API_KEY:
     raise SystemExit('No API key: set AIRTABLE_API_KEY, or airtable.api_key in config.yaml')
 if not BACKUP_DIR:
@@ -34,13 +27,23 @@ HEADERS = {'Authorization': f'Bearer {API_KEY}'}
 
 # Function to list all bases and generate a dictionary of base_id: base_name
 def list_all_bases():
-    response = requests.get('https://api.airtable.com/v0/meta/bases', headers=HEADERS)
-    response.raise_for_status()  # Check for HTTP errors
-    bases = response.json()['bases']
-    
-    # Create a dictionary with base_id as the key and base name as the value
-    base_dict = {base['id']: base['name'] for base in bases}
-    
+    base_dict = {}
+    params = {}
+
+    # The endpoint returns a page of bases at a time, with an offset for the next one
+    while True:
+        response = requests.get('https://api.airtable.com/v0/meta/bases', headers=HEADERS, params=params)
+        response.raise_for_status()  # Check for HTTP errors
+        data = response.json()
+
+        # Create a dictionary with base_id as the key and base name as the value
+        base_dict.update({base['id']: base['name'] for base in data['bases']})
+
+        if 'offset' in data:
+            params = {'offset': data['offset']}
+        else:
+            break
+
     return base_dict
 
 # Create a root directory to store all base exports
@@ -59,9 +62,10 @@ def export_table_data(base_id, table_name):
     encoded_table_name = quote(table_name, safe="")
     url = f'https://api.airtable.com/v0/{base_id}/{encoded_table_name}'
     records = []
+    params = {}
     
     while True:
-        response = requests.get(url, headers=HEADERS)
+        response = requests.get(url, headers=HEADERS, params=params)
         response.raise_for_status()
         data = response.json()
         
@@ -69,7 +73,7 @@ def export_table_data(base_id, table_name):
         
         # Check if there are more pages of data
         if 'offset' in data:
-            url = f'https://api.airtable.com/v0/{base_id}/{table_name}?offset={data["offset"]}'
+            params = {'offset': data['offset']}
         else:
             break
 
@@ -85,7 +89,10 @@ def export_base_tables(base_dict, base_id):
     print(f"Exporting base {base_name}...")
     
     # Create a directory for the base
-    base_dir = os.path.join(BACKUP_DIR, base_name.replace(" ", "_").replace(":", ""))  # Replace spaces with underscores for folder names
+    # Replace spaces with underscores for folder names, and add the base ID so
+    # that two bases with the same name never write to the same folder
+    folder_name = base_name.replace(" ", "_").replace(":", "")
+    base_dir = os.path.join(BACKUP_DIR, f"{folder_name}_{base_id}")
 
     if not os.path.exists(base_dir):
         os.makedirs(base_dir)
@@ -106,15 +113,8 @@ def export_base_tables(base_dict, base_id):
 
 # Retrieve the dictionary of all accessible bases
 base_dict = list_all_bases()
-
-# Determine the list of base IDs to process
-if not BASE_IDS:
-    # If BASE_IDS is empty, use all bases in base_dict
-    base_ids_to_export = base_dict.keys()
-else:
-    # Use the specified base IDs from the configuration
-    base_ids_to_export = BASE_IDS
+print(f"Found {len(base_dict)} bases")
 
 # Export each base
-for base_id in base_ids_to_export:
+for base_id in base_dict:
     export_base_tables(base_dict, base_id)
